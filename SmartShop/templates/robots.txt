@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /media/
+
+Sitemap: https://votredomaine.com/sitemap.xml
+```
+
+### **B. Vérifiez que le sitemap fonctionne**
+
+Votre sitemap est déjà configuré ! Testez :
+```
+http://127.0.0.1:8000/sitemap.xml

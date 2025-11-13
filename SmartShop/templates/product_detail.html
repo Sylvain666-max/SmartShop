@@ -1,0 +1,618 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+.platform-detail {
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    height: 100%;
+}
+
+.platform-header {
+    padding: 30px;
+    color: white;
+    text-align: center;
+}
+
+.amazon-header {
+    background: linear-gradient(135deg, #FF9900 0%, #ff7700 100%);
+}
+
+.ebay-header {
+    background: linear-gradient(135deg, #E53238 0%, #c41e24 100%);
+}
+
+.platform-content {
+    padding: 30px;
+    background: white;
+}
+
+.price-display {
+    text-align: center;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 15px;
+    margin-bottom: 20px;
+}
+
+.price-label {
+    font-size: 0.9rem;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+.price-value {
+    font-size: 3rem;
+    font-weight: 900;
+    color: var(--primary);
+}
+
+.info-grid {
+    display: grid;
+    gap: 15px;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.info-item i {
+    font-size: 1.5rem;
+    color: var(--primary);
+}
+
+.btn-amazon {
+    background: linear-gradient(135deg, #FF9900 0%, #ff7700 100%);
+    border: none;
+    color: white;
+    font-weight: 600;
+}
+
+.btn-amazon:hover {
+    background: linear-gradient(135deg, #ff7700 0%, #ff6600 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 153, 0, 0.3);
+    color: white;
+}
+
+.btn-ebay {
+    background: linear-gradient(135deg, #E53238 0%, #c41e24 100%);
+    border: none;
+    color: white;
+    font-weight: 600;
+}
+
+.btn-ebay:hover {
+    background: linear-gradient(135deg, #c41e24 0%, #a01820 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(229, 50, 56, 0.3);
+    color: white;
+}
+
+.verdict-section {
+    margin: 60px 0;
+}
+
+.verdict-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 40px;
+    border-radius: 20px;
+    text-align: center;
+}
+
+.verdict-icon {
+    font-size: 5rem;
+    margin-bottom: 20px;
+}
+
+.vote-btn {
+    width: 100%;
+    padding: 30px;
+    border: 3px solid #e2e8f0;
+    border-radius: 15px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.vote-btn:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.vote-icon {
+    font-size: 2.5rem;
+}
+
+.vote-label {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.vote-count {
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--primary);
+}
+
+.description-section {
+    margin: 60px 0;
+}
+</style>
+
+<div class="container my-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'products:home' %}">Accueil</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'products:category' product.category.slug %}">{{ product.category.name }}</a></li>
+            <li class="breadcrumb-item active">{{ product.title }}</li>
+        </ol>
+    </nav>
+
+    <!-- Battle Header -->
+    <div class="text-center mb-5">
+        <span class="badge bg-danger fs-5 mb-3">⚔️ BATAILLE EN COURS</span>
+        <h1 class="display-4 fw-bold">{{ product.title }}</h1>
+        <p class="lead">{{ product.short_description }}</p>
+    </div>
+
+    <!-- Image principale -->
+    <div class="row mb-5">
+        <div class="col-lg-8 mx-auto">
+            <img src="{{ product.image.url }}" loading="lazy" class="img-fluid rounded-4 shadow-lg" alt="{{ product.title }}" id="main-product-image">
+        </div>
+    </div>
+
+    <!-- Combat Principal -->
+    <div class="row g-4 mb-5">
+        <!-- Amazon -->
+        <div class="col-md-6">
+            <div class="platform-detail amazon-detail">
+                <div class="platform-header amazon-header">
+                    <h2 class="mb-0">🛒 Amazon</h2>
+                </div>
+                <div class="platform-content">
+                    {% if product.amazon_price %}
+                    <div class="price-display">
+                        <div class="price-label">Prix</div>
+                        <div class="price-value">{{ product.amazon_price }} €</div>
+                    </div>
+                    
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i class="bi bi-truck"></i>
+                            <div>
+                                <strong>Livraison</strong>
+                                {% if product.amazon_shipping > 0 %}
+                                <span>{{ product.amazon_shipping }} €</span>
+                                {% else %}
+                                <span class="text-success">Gratuite</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <i class="bi bi-calendar"></i>
+                            <div>
+                                <strong>Délai</strong>
+                                <span>{{ product.amazon_delivery_days }} jour(s)</span>
+                            </div>
+                        </div>
+                        
+                        {% if product.amazon_rating %}
+                        <div class="info-item">
+                            <i class="bi bi-star-fill"></i>
+                            <div>
+                                <strong>Note</strong>
+                                <span>{{ product.amazon_rating }}/5 ({{ product.amazon_reviews }} avis)</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="info-item">
+                            <i class="bi bi-calculator"></i>
+                            <div>
+                                <strong>Total</strong>
+                                <span class="fw-bold">{{ product.amazon_price|add:product.amazon_shipping }} €</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if product.amazon_available and product.amazon_link %}
+                    <a href="{{ product.amazon_link }}" target="_blank" rel="nofollow noopener" 
+                       class="btn btn-amazon btn-lg w-100 mt-4">
+                        <i class="bi bi-cart-plus"></i> Acheter sur Amazon
+                    </a>
+                    {% else %}
+                    <button class="btn btn-secondary btn-lg w-100 mt-4" disabled>
+                        Indisponible
+                    </button>
+                    {% endif %}
+                    {% else %}
+                    <p class="text-center text-muted">Prix non disponible</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- eBay -->
+        <div class="col-md-6">
+            <div class="platform-detail ebay-detail">
+                <div class="platform-header ebay-header">
+                    <h2 class="mb-0">🏪 eBay</h2>
+                </div>
+                <div class="platform-content">
+                    {% if product.ebay_price %}
+                    <div class="price-display">
+                        <div class="price-label">Prix</div>
+                        <div class="price-value">{{ product.ebay_price }} €</div>
+                    </div>
+                    
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i class="bi bi-truck"></i>
+                            <div>
+                                <strong>Livraison</strong>
+                                {% if product.ebay_shipping > 0 %}
+                                <span>{{ product.ebay_shipping }} €</span>
+                                {% else %}
+                                <span class="text-success">Gratuite</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <i class="bi bi-calendar"></i>
+                            <div>
+                                <strong>Délai</strong>
+                                <span>{{ product.ebay_delivery_days }} jour(s)</span>
+                            </div>
+                        </div>
+                        
+                        {% if product.ebay_rating %}
+                        <div class="info-item">
+                            <i class="bi bi-star-fill"></i>
+                            <div>
+                                <strong>Note</strong>
+                                <span>{{ product.ebay_rating }}/5 ({{ product.ebay_reviews }} avis)</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="info-item">
+                            <i class="bi bi-calculator"></i>
+                            <div>
+                                <strong>Total</strong>
+                                <span class="fw-bold">{{ product.ebay_price|add:product.ebay_shipping }} €</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if product.ebay_available and product.ebay_link %}
+                    <a href="{{ product.ebay_link }}" target="_blank" rel="nofollow noopener" 
+                       class="btn btn-ebay btn-lg w-100 mt-4">
+                        <i class="bi bi-cart-plus"></i> Acheter sur eBay
+                    </a>
+                    {% else %}
+                    <button class="btn btn-secondary btn-lg w-100 mt-4" disabled>
+                        Indisponible
+                    </button>
+                    {% endif %}
+                    {% else %}
+                    <p class="text-center text-muted">Prix non disponible</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Verdict -->
+    {% if best_price %}
+    <div class="verdict-section">
+        <h2 class="text-center mb-4">🏆 Verdict</h2>
+        <div class="verdict-card">
+            <div class="verdict-icon">
+                {% if best_price.platform == 'Amazon' %}
+                🛒
+                {% else %}
+                🏪
+                {% endif %}
+            </div>
+            <h3>{{ best_price.platform }} remporte cette bataille !</h3>
+            {% if price_diff %}
+            <p class="lead">Économisez <strong>{{ price_diff.difference|floatformat:2 }} €</strong> ({{ price_diff.percentage }}% moins cher)</p>
+            {% endif %}
+            <p class="text-light">Prix total : {{ best_price.total|floatformat:2 }} € (frais de port inclus)</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Vote communautaire -->
+    <div class="vote-section my-5">
+        <h3 class="text-center mb-4">💬 Quelle plateforme préférez-vous ?</h3>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <button onclick="vote('amazon')" class="vote-btn amazon-vote">
+                    <span class="vote-icon">🛒</span>
+                    <span class="vote-label">Amazon</span>
+                    <span class="vote-count" id="amazon-votes">{{ vote_stats.amazon }}</span>
+                </button>
+                {% if total_votes > 0 %}
+                <div class="progress mt-2" style="height: 10px;">
+                    <div class="progress-bar bg-warning" style="width: {{ vote_stats.amazon_percent }}%"></div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <button onclick="vote('ebay')" class="vote-btn ebay-vote">
+                    <span class="vote-icon">🏪</span>
+                    <span class="vote-label">eBay</span>
+                    <span class="vote-count" id="ebay-votes">{{ vote_stats.ebay }}</span>
+                </button>
+                {% if total_votes > 0 %}
+                <div class="progress mt-2" style="height: 10px;">
+                    <div class="progress-bar bg-danger" style="width: {{ vote_stats.ebay_percent }}%"></div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        <p class="text-center text-muted mt-3">{{ total_votes }} vote(s) au total</p>
+    </div>
+
+    <!-- Description -->
+    <div class="description-section">
+        <h2 class="section-title">📝 Description</h2>
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                {{ product.description|linebreaks }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Related Products -->
+    {% if related_products %}
+    <div class="row mt-5">
+        <div class="col-12">
+            <h2 class="section-title">Produits Similaires</h2>
+        </div>
+        {% for related in related_products %}
+        <div class="col-md-3 mb-4">
+            <div class="product-card">
+                <img src="{{ related.image.url }}" loading="lazy" class="card-img-top" alt="{{ related.title }}">
+                <div class="card-body">
+                    <h6 class="card-title">{{ related.title|truncatewords:6 }}</h6>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <span class="price h5 mb-0">{{ related.base_price }} €</span>
+                        <a href="{% url 'products:product_detail' related.slug %}" class="btn btn-sm btn-primary">Voir</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Disclaimer -->
+    <div class="alert alert-info mt-5">
+        <i class="bi bi-info-circle"></i>
+        <strong>Information importante :</strong> Les prix affichés peuvent varier. SmartShop peut percevoir une commission sur les achats effectués via nos liens d'affiliation. Cela n'affecte pas le prix que vous payez.
+    </div>
+</div>
+
+<script>
+    // Système de vote avec animation
+    function vote(platform) {
+        fetch("{% url 'products:vote' product.id %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: `platform=${platform}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateVoteCount('amazon', data.votes.amazon);
+                updateVoteCount('ebay', data.votes.ebay);
+                
+                const btn = event.target.closest('.vote-btn');
+                btn.style.transform = 'scale(0.95)';
+                setTimeout(() => btn.style.transform = 'scale(1)', 200);
+                
+                if (typeof showToast !== 'undefined') {
+                    showToast('✅ Merci pour votre vote !', 'success');
+                }
+                
+                createConfetti(btn);
+            } else {
+                if (typeof showToast !== 'undefined') {
+                    showToast('⚠️ ' + data.error, 'warning');
+                } else {
+                    alert(data.error);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (typeof showToast !== 'undefined') {
+                showToast('❌ Une erreur est survenue', 'danger');
+            }
+        });
+    }
+
+    function updateVoteCount(platform, newCount) {
+        const countElement = document.getElementById(`${platform}-votes`);
+        const oldCount = parseInt(countElement.textContent);
+        
+        let current = oldCount;
+        const increment = newCount > oldCount ? 1 : -1;
+        const timer = setInterval(() => {
+            current += increment;
+            countElement.textContent = current;
+            if (current === newCount) clearInterval(timer);
+        }, 100);
+        
+        countElement.style.transform = 'scale(1.3)';
+        countElement.style.color = '#10b981';
+        setTimeout(() => {
+            countElement.style.transform = 'scale(1)';
+            countElement.style.color = '';
+        }, 300);
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function createConfetti(element) {
+        const colors = ['#FF9900', '#E53238', '#10b981', '#2563eb'];
+        const rect = element.getBoundingClientRect();
+        
+        for (let i = 0; i < 30; i++) {
+            const confetti = document.createElement('div');
+            confetti.style.position = 'fixed';
+            confetti.style.left = rect.left + rect.width / 2 + 'px';
+            confetti.style.top = rect.top + rect.height / 2 + 'px';
+            confetti.style.width = '10px';
+            confetti.style.height = '10px';
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.borderRadius = '50%';
+            confetti.style.pointerEvents = 'none';
+            confetti.style.zIndex = '9999';
+            document.body.appendChild(confetti);
+            
+            const angle = (Math.PI * 2 * i) / 30;
+            const velocity = 3 + Math.random() * 3;
+            let x = 0, y = 0, opacity = 1;
+            
+            const animate = () => {
+                x += Math.cos(angle) * velocity;
+                y += Math.sin(angle) * velocity + 2;
+                opacity -= 0.02;
+                
+                confetti.style.transform = `translate(${x}px, ${y}px)`;
+                confetti.style.opacity = opacity;
+                
+                if (opacity > 0) {
+                    requestAnimationFrame(animate);
+                } else {
+                    confetti.remove();
+                }
+            };
+            animate();
+        }
+    }
+
+    // Animation de comparaison de prix
+    document.addEventListener('DOMContentLoaded', () => {
+        const amazonTotal = parseFloat('{{ product.amazon_price|add:product.amazon_shipping|default:0 }}');
+        const ebayTotal = parseFloat('{{ product.ebay_price|add:product.ebay_shipping|default:0 }}');
+        
+        if (amazonTotal > 0 && ebayTotal > 0) {
+            const winner = amazonTotal < ebayTotal ? 'amazon' : 'ebay';
+            const winnerCard = document.querySelector(`.${winner}-detail`);
+            if (winnerCard) {
+                winnerCard.style.boxShadow = '0 0 30px rgba(16, 185, 129, 0.3)';
+                winnerCard.style.border = '3px solid #10b981';
+            }
+        }
+
+        document.querySelectorAll('.info-item').forEach(item => {
+            item.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateX(5px)';
+                this.style.transition = 'transform 0.3s ease';
+            });
+            item.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateX(0)';
+            });
+        });
+
+        // Zoom sur l'image principale
+        const mainImage = document.getElementById('main-product-image');
+        if (mainImage) {
+            mainImage.style.cursor = 'zoom-in';
+            mainImage.style.transition = 'transform 0.3s ease';
+            mainImage.addEventListener('click', function() {
+                if (!this.classList.contains('zoomed')) {
+                    this.style.transform = 'scale(1.5)';
+                    this.style.cursor = 'zoom-out';
+                    this.classList.add('zoomed');
+                } else {
+                    this.style.transform = 'scale(1)';
+                    this.style.cursor = 'zoom-in';
+                    this.classList.remove('zoomed');
+                }
+            });
+        }
+    });
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org/",
+  "@type": "Product",
+  "name": "{{ product.title }}",
+  "image": "{{ request.scheme }}://{{ request.get_host }}{{ product.image.url }}",
+  "description": "{{ product.short_description }}",
+  "brand": {
+    "@type": "Brand",
+    "name": "{{ product.category.name }}"
+  },
+  "offers": [
+    {% if product.amazon_price %}
+    {
+      "@type": "Offer",
+      "url": "{{ product.amazon_link }}",
+      "priceCurrency": "EUR",
+      "price": "{{ product.amazon_price }}",
+      "availability": "https://schema.org/InStock",
+      "seller": {
+        "@type": "Organization",
+        "name": "Amazon"
+      }
+    }{% if product.ebay_price %},{% endif %}
+    {% endif %}
+    {% if product.ebay_price %}
+    {
+      "@type": "Offer",
+      "url": "{{ product.ebay_link }}",
+      "priceCurrency": "EUR",
+      "price": "{{ product.ebay_price }}",
+      "availability": "https://schema.org/InStock",
+      "seller": {
+        "@type": "Organization",
+        "name": "eBay"
+      }
+    }
+    {% endif %}
+  ],
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "4.5",
+    "reviewCount": "{{ vote_stats.amazon|add:vote_stats.ebay }}"
+  }
+}
+</script>
+{% endblock %}

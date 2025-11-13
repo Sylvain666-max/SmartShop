@@ -1,0 +1,316 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- Category Header -->
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold">{{ category.name }}</h1>
+        {% if category.description %}
+        <p class="lead text-muted">{{ category.description }}</p>
+        {% endif %}
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4" id="filter-bar">
+        <div class="col-md-8">
+            <div class="btn-group" role="group">
+                <a href="{% url 'products:category' category.slug %}" class="btn btn-outline-primary {% if not request.GET.platform %}active{% endif %}">
+                    Tous
+                </a>
+                <a href="?platform=amazon" class="btn btn-outline-primary {% if request.GET.platform == 'amazon' %}active{% endif %}">
+                    🛒 Amazon
+                </a>
+                <a href="?platform=ebay" class="btn btn-outline-primary {% if request.GET.platform == 'ebay' %}active{% endif %}">
+                    🏪 eBay
+                </a>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <select class="form-select" onchange="window.location.href='?sort='+this.value">
+                <option value="newest" {% if request.GET.sort == 'newest' or not request.GET.sort %}selected{% endif %}>Plus récents</option>
+                <option value="price_low" {% if request.GET.sort == 'price_low' %}selected{% endif %}>Prix croissant</option>
+                <option value="price_high" {% if request.GET.sort == 'price_high' %}selected{% endif %}>Prix décroissant</option>
+                <option value="popular" {% if request.GET.sort == 'popular' %}selected{% endif %}>Populaires</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Products Grid -->
+    <div class="row g-4" id="products-grid">
+        {% for product in products %}
+        <div class="col-lg-3 col-md-4 col-sm-6 product-item">
+            <div class="product-card" data-product-id="{{ product.id }}">
+                {% if product.is_featured %}
+                <span class="badge badge-featured">Recommandé</span>
+                {% endif %}
+                <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.title }}">
+                <div class="card-body">
+                    <a href="{% url 'products:category' product.category.slug %}" class="category-badge mb-2">
+                        {{ product.category.name }}
+                    </a>
+                    <h6 class="card-title mt-2">{{ product.title|truncatewords:8 }}</h6>
+                    <p class="card-text text-muted small">{{ product.short_description|truncatewords:12 }}</p>
+                    
+                    <!-- Price comparison mini -->
+                    <div class="d-flex justify-content-between align-items-center mt-2 small price-comparison">
+                        {% if product.amazon_price %}
+                        <span class="text-warning amazon-price" data-price="{{ product.amazon_price }}">🛒 {{ product.amazon_price }}€</span>
+                        {% endif %}
+                        {% if product.ebay_price %}
+                        <span class="text-danger ebay-price" data-price="{{ product.ebay_price }}">🏪 {{ product.ebay_price }}€</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <span class="price h5 mb-0 best-price">
+                            {% if product.amazon_price and product.ebay_price %}
+                                {% if product.amazon_price < product.ebay_price %}
+                                    {{ product.amazon_price }} €
+                                {% else %}
+                                    {{ product.ebay_price }} €
+                                {% endif %}
+                            {% elif product.amazon_price %}
+                                {{ product.amazon_price }} €
+                            {% elif product.ebay_price %}
+                                {{ product.ebay_price }} €
+                            {% else %}
+                                {{ product.base_price }} €
+                            {% endif %}
+                        </span>
+                        <a href="{% url 'products:product_detail' product.slug %}" class="btn btn-sm btn-primary compare-btn">Comparer</a>
+                    </div>
+                    
+                    <!-- Favoris button -->
+                    <button class="btn btn-sm btn-outline-danger w-100 mt-2 favorite-btn" onclick="toggleFavorite({{ product.id }})">
+                        <i class="bi bi-heart"></i> Favoris
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <i class="bi bi-inbox display-1 text-muted"></i>
+            <p class="lead text-muted mt-3">Aucun produit dans cette catégorie pour le moment.</p>
+            <a href="{% url 'products:home' %}" class="btn btn-primary">Retour à l'accueil</a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if products.has_other_pages %}
+    <nav class="mt-5">
+        <ul class="pagination justify-content-center">
+            {% if products.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ products.previous_page_number }}{% if request.GET.platform %}&platform={{ request.GET.platform }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">
+                    <i class="bi bi-chevron-left"></i> Précédent
+                </a>
+            </li>
+            {% endif %}
+
+            {% for num in products.paginator.page_range %}
+                {% if products.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > products.number|add:'-3' and num < products.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% if request.GET.platform %}&platform={{ request.GET.platform }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">{{ num }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if products.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ products.next_page_number }}{% if request.GET.platform %}&platform={{ request.GET.platform }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">
+                    Suivant <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<script>
+    // Animation de chargement des cartes
+    document.addEventListener('DOMContentLoaded', () => {
+        const cards = document.querySelectorAll('.product-item');
+        cards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                card.style.transition = 'all 0.5s ease-out';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 50);
+        });
+
+        // Sticky filters au scroll
+        const filterBar = document.getElementById('filter-bar');
+        if (filterBar) {
+            const filterOffset = filterBar.offsetTop;
+            window.addEventListener('scroll', () => {
+                if (window.pageYOffset > filterOffset - 20) {
+                    filterBar.style.position = 'sticky';
+                    filterBar.style.top = '70px';
+                    filterBar.style.zIndex = '100';
+                    filterBar.style.backgroundColor = 'white';
+                    filterBar.style.padding = '15px 0';
+                    filterBar.style.marginBottom = '20px';
+                    filterBar.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+                    filterBar.style.borderRadius = '10px';
+                } else {
+                    filterBar.style.position = 'relative';
+                    filterBar.style.top = '0';
+                    filterBar.style.boxShadow = 'none';
+                    filterBar.style.padding = '0';
+                }
+            });
+        }
+
+        // Highlight du meilleur prix
+        setupPriceComparison();
+        
+        // Charger les favoris
+        updateFavoriteButtons();
+    });
+
+    // Comparaison de prix en temps réel
+    function setupPriceComparison() {
+        document.querySelectorAll('.price-comparison').forEach(comparison => {
+            const amazonPrice = comparison.querySelector('.amazon-price');
+            const ebayPrice = comparison.querySelector('.ebay-price');
+            
+            if (amazonPrice && ebayPrice) {
+                const amazon = parseFloat(amazonPrice.dataset.price);
+                const ebay = parseFloat(ebayPrice.dataset.price);
+                
+                if (amazon < ebay) {
+                    amazonPrice.innerHTML = `<strong>🏆 ${amazonPrice.textContent}</strong>`;
+                    amazonPrice.style.fontSize = '1.1em';
+                    amazonPrice.style.color = '#10b981';
+                } else if (ebay < amazon) {
+                    ebayPrice.innerHTML = `<strong>🏆 ${ebayPrice.textContent}</strong>`;
+                    ebayPrice.style.fontSize = '1.1em';
+                    ebayPrice.style.color = '#10b981';
+                }
+            }
+        });
+    }
+
+    // Système de favoris (localStorage)
+    function toggleFavorite(productId) {
+        let favorites = JSON.parse(localStorage.getItem('smartshop_favorites') || '[]');
+        const index = favorites.indexOf(productId);
+        
+        if (index > -1) {
+            favorites.splice(index, 1);
+            if (typeof showToast !== 'undefined') {
+                showToast('❌ Retiré des favoris', 'info');
+            }
+        } else {
+            favorites.push(productId);
+            if (typeof showToast !== 'undefined') {
+                showToast('⭐ Ajouté aux favoris', 'success');
+            }
+        }
+        
+        localStorage.setItem('smartshop_favorites', JSON.stringify(favorites));
+        updateFavoriteButtons();
+    }
+
+    function updateFavoriteButtons() {
+        const favorites = JSON.parse(localStorage.getItem('smartshop_favorites') || '[]');
+        document.querySelectorAll('.product-card').forEach(card => {
+            const productId = parseInt(card.dataset.productId);
+            const btn = card.querySelector('.favorite-btn');
+            if (btn) {
+                if (favorites.includes(productId)) {
+                    btn.classList.remove('btn-outline-danger');
+                    btn.classList.add('btn-danger');
+                    btn.innerHTML = '<i class="bi bi-heart-fill"></i> Favoris';
+                } else {
+                    btn.classList.remove('btn-danger');
+                    btn.classList.add('btn-outline-danger');
+                    btn.innerHTML = '<i class="bi bi-heart"></i> Favoris';
+                }
+            }
+        });
+    }
+
+    // Bouton scroll to top
+    const scrollTopBtn = document.createElement('button');
+    scrollTopBtn.innerHTML = '<i class="bi bi-arrow-up"></i>';
+    scrollTopBtn.className = 'btn btn-primary rounded-circle';
+    scrollTopBtn.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        display: none;
+        z-index: 1000;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        border: none;
+    `;
+    scrollTopBtn.setAttribute('aria-label', 'Retour en haut');
+    document.body.appendChild(scrollTopBtn);
+
+    window.addEventListener('scroll', () => {
+        if (window.pageYOffset > 300) {
+            scrollTopBtn.style.display = 'block';
+        } else {
+            scrollTopBtn.style.display = 'none';
+        }
+    });
+
+    scrollTopBtn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Animation hover sur les cartes
+    document.querySelectorAll('.product-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+
+    // Animation sur les boutons de comparaison
+    document.querySelectorAll('.compare-btn').forEach(btn => {
+        btn.addEventListener('mouseenter', function() {
+            this.innerHTML = '<i class="bi bi-lightning-charge-fill"></i> Battle!';
+        });
+        btn.addEventListener('mouseleave', function() {
+            this.innerHTML = 'Comparer';
+        });
+    });
+
+    // Effet de loading lors du changement de filtre
+    document.querySelectorAll('.btn-group a, .form-select').forEach(element => {
+        element.addEventListener('click', function(e) {
+            const grid = document.getElementById('products-grid');
+            if (grid) {
+                grid.style.opacity = '0.5';
+                grid.style.pointerEvents = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}
+```
+
+---
+
+# ✅ **RÉCAPITULATIF FINAL**
+
+Voici les **4 fichiers** à créer dans votre dossier `templates/` :
+
+## 📁 **Structure finale :**
+```
+templates/
+├── base.html              ← Template de base (navbar + footer + JS global)
+├── home.html              ← Page d'accueil avec bataille Amazon vs eBay
+├── product_detail.html    ← Page produit avec vote et confetti
+└── category.html          ← Page catégorie avec filtres et favoris
